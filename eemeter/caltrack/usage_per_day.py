@@ -151,12 +151,7 @@ class CalTRACKUsagePerDayModelResults(object):
         self.avgs_metrics = None
 
     def __repr__(self):
-        return (
-            "CalTRACKUsagePerDayModelResults(status='{}', method_name='{}',"
-            " r_squared_adj={})".format(
-                self.status, self.method_name, self.r_squared_adj
-            )
-        )
+        return f"CalTRACKUsagePerDayModelResults(status='{self.status}', method_name='{self.method_name}', r_squared_adj={self.r_squared_adj})"
 
     def json(self, with_candidates=False):
         """Return a JSON-serializable representation of this result.
@@ -195,8 +190,7 @@ class CalTRACKUsagePerDayModelResults(object):
 
         # "model" is a CalTRACKUsagePerDayCandidateModel that was serialized
         model = None
-        d = data.get("model")
-        if d:
+        if d := data.get("model"):
             model = CalTRACKUsagePerDayCandidateModel.from_json(d)
 
         c = cls(
@@ -211,13 +205,9 @@ class CalTRACKUsagePerDayModelResults(object):
             settings=data.get("settings"),
         )
 
-        # Note the metrics do not contain all the data needed
-        # for reconstruction (like the input pandas) ...
-        d = data.get("avgs_metrics")
-        if d:
+        if d := data.get("avgs_metrics"):
             c.avgs_metrics = ModelMetrics.from_json(d)
-        d = data.get("totals_metrics")
-        if d:
+        if d := data.get("totals_metrics"):
             c.totals_metrics = ModelMetrics.from_json(d)
         return c
 
@@ -353,12 +343,7 @@ class CalTRACKUsagePerDayCandidateModel(object):
         self.warnings = warnings
 
     def __repr__(self):
-        return "CalTRACKUsagePerDayCandidateModel(model_type='{}', formula='{}', status='{}'," " r_squared_adj={})".format(
-            self.model_type,
-            self.formula,
-            self.status,
-            round(self.r_squared_adj, 3) if self.r_squared_adj is not None else None,
-        )
+        return f"CalTRACKUsagePerDayCandidateModel(model_type='{self.model_type}', formula='{self.formula}', status='{self.status}', r_squared_adj={round(self.r_squared_adj, 3) if self.r_squared_adj is not None else None})"
 
     def json(self):
         """Return a JSON-serializable representation of this result.
@@ -383,7 +368,7 @@ class CalTRACKUsagePerDayCandidateModel(object):
         of :any:`json.loads`.
         """
 
-        c = cls(
+        return cls(
             data.get("model_type"),
             data.get("formula"),
             data.get("status"),
@@ -391,8 +376,6 @@ class CalTRACKUsagePerDayCandidateModel(object):
             r_squared_adj=data.get("r_squared_adj"),
             warnings=data.get("warnings"),
         )
-
-        return c
 
     def predict(
         self,
@@ -501,7 +484,7 @@ def _get_parameter_or_raise(model_type, model_params, param):
         return model_params[param]
     except KeyError:
         raise MissingModelParameterError(
-            '"{}" parameter required for model_type: {}'.format(param, model_type)
+            f'"{param}" parameter required for model_type: {model_type}'
         )
 
 
@@ -578,7 +561,7 @@ def _caltrack_predict_design_matrix(
         heating_balance_point = _get_parameter_or_raise(
             model_type, model_params, "heating_balance_point"
         )
-        hdd_column_name = "hdd_%s" % heating_balance_point
+        hdd_column_name = f"hdd_{heating_balance_point}"
         hdd = data[hdd_column_name]
         if input_averages == True and output_averages == False:
             heating_load = hdd * beta_hdd * days_per_period
@@ -596,7 +579,7 @@ def _caltrack_predict_design_matrix(
         cooling_balance_point = _get_parameter_or_raise(
             model_type, model_params, "cooling_balance_point"
         )
-        cdd_column_name = "cdd_%s" % cooling_balance_point
+        cdd_column_name = f"cdd_{cooling_balance_point}"
         cdd = data[cdd_column_name]
         if input_averages == True and output_averages == False:
             cooling_load = cdd * beta_cdd * days_per_period
@@ -728,7 +711,7 @@ def caltrack_usage_per_day_predict(
             empty_columns = {"predicted_usage": []}
 
         if with_design_matrix:
-            empty_columns.update({col: [] for col in design_matrix.columns})
+            empty_columns |= {col: [] for col in design_matrix.columns}
 
         predict_warnings.append(
             EEMeterWarning(
@@ -958,10 +941,11 @@ def get_parameter_p_value_too_high_warning(
     warnings = []
     if p_value > maximum_p_value:
         data = {
-            "{}_p_value".format(parameter): p_value,
-            "{}_maximum_p_value".format(parameter): maximum_p_value,
+            f"{parameter}_p_value": p_value,
+            f"{parameter}_maximum_p_value": maximum_p_value,
         }
-        data.update(model_params)
+
+        data |= model_params
         warnings.append(
             EEMeterWarning(
                 qualified_name=(
@@ -998,13 +982,14 @@ def get_fit_failed_candidate_model(model_type, formula):
     """
     warnings = [
         EEMeterWarning(
-            qualified_name="eemeter.caltrack_daily.{}.model_results".format(model_type),
+            qualified_name=f"eemeter.caltrack_daily.{model_type}.model_results",
             description=(
                 "Error encountered in statsmodels.formula.api.ols method. (Empty data?)"
             ),
             data={"traceback": traceback.format_exc()},
         )
     ]
+
     return CalTRACKUsagePerDayCandidateModel(
         model_type=model_type, formula=formula, status="ERROR", warnings=warnings
     )
@@ -1031,11 +1016,7 @@ def get_intercept_only_candidate_models(data, weights_col):
     model_type = "intercept_only"
     formula = "meter_value ~ 1"
 
-    if weights_col is None:
-        weights = 1
-    else:
-        weights = data[weights_col]
-
+    weights = 1 if weights_col is None else data[weights_col]
     try:
         model = smf.wls(formula=formula, data=data, weights=weights)
     except Exception as e:
@@ -1054,11 +1035,7 @@ def get_intercept_only_candidate_models(data, weights_col):
             get_parameter_negative_warning(model_type, model_params, parameter)
         )
 
-    if len(model_warnings) > 0:
-        status = "DISQUALIFIED"
-    else:
-        status = "QUALIFIED"
-
+    status = "DISQUALIFIED" if model_warnings else "QUALIFIED"
     return [
         CalTRACKUsagePerDayCandidateModel(
             model_type=model_type,
@@ -1109,14 +1086,10 @@ def get_single_cdd_only_candidate_model(
         A single cdd-only candidate model, with any associated warnings.
     """
     model_type = "cdd_only"
-    cdd_column = "cdd_%s" % balance_point
-    formula = "meter_value ~ %s" % cdd_column
+    cdd_column = f"cdd_{balance_point}"
+    formula = f"meter_value ~ {cdd_column}"
 
-    if weights_col is None:
-        weights = 1
-    else:
-        weights = data[weights_col]
-
+    weights = 1 if weights_col is None else data[weights_col]
     period_days = weights
 
     degree_day_warnings = []
@@ -1136,7 +1109,7 @@ def get_single_cdd_only_candidate_model(
         )
     )
 
-    if len(degree_day_warnings) > 0:
+    if degree_day_warnings:
         return CalTRACKUsagePerDayCandidateModel(
             model_type=model_type,
             formula=formula,
@@ -1177,11 +1150,7 @@ def get_single_cdd_only_candidate_model(
         )
     )
 
-    if len(model_warnings) > 0:
-        status = "DISQUALIFIED"
-    else:
-        status = "QUALIFIED"
-
+    status = "DISQUALIFIED" if model_warnings else "QUALIFIED"
     return CalTRACKUsagePerDayCandidateModel(
         model_type=model_type,
         formula=formula,
@@ -1223,7 +1192,7 @@ def get_cdd_only_candidate_models(
         A list of cdd-only candidate models, with any associated warnings.
     """
     balance_points = [int(col[4:]) for col in data.columns if col.startswith("cdd")]
-    candidate_models = [
+    return [
         get_single_cdd_only_candidate_model(
             data,
             minimum_non_zero_cdd,
@@ -1234,7 +1203,6 @@ def get_cdd_only_candidate_models(
         )
         for balance_point in balance_points
     ]
-    return candidate_models
 
 
 def get_single_hdd_only_candidate_model(
@@ -1273,14 +1241,10 @@ def get_single_hdd_only_candidate_model(
         A single hdd-only candidate model, with any associated warnings.
     """
     model_type = "hdd_only"
-    hdd_column = "hdd_%s" % balance_point
-    formula = "meter_value ~ %s" % hdd_column
+    hdd_column = f"hdd_{balance_point}"
+    formula = f"meter_value ~ {hdd_column}"
 
-    if weights_col is None:
-        weights = 1
-    else:
-        weights = data[weights_col]
-
+    weights = 1 if weights_col is None else data[weights_col]
     period_days = weights
 
     degree_day_warnings = []
@@ -1300,7 +1264,7 @@ def get_single_hdd_only_candidate_model(
         )
     )
 
-    if len(degree_day_warnings) > 0:
+    if degree_day_warnings:
         return CalTRACKUsagePerDayCandidateModel(
             model_type=model_type,
             formula=formula,
@@ -1341,11 +1305,7 @@ def get_single_hdd_only_candidate_model(
         )
     )
 
-    if len(model_warnings) > 0:
-        status = "DISQUALIFIED"
-    else:
-        status = "QUALIFIED"
-
+    status = "DISQUALIFIED" if model_warnings else "QUALIFIED"
     return CalTRACKUsagePerDayCandidateModel(
         model_type=model_type,
         formula=formula,
@@ -1388,7 +1348,7 @@ def get_hdd_only_candidate_models(
 
     balance_points = [int(col[4:]) for col in data.columns if col.startswith("hdd")]
 
-    candidate_models = [
+    return [
         get_single_hdd_only_candidate_model(
             data,
             minimum_non_zero_hdd,
@@ -1399,7 +1359,6 @@ def get_hdd_only_candidate_models(
         )
         for balance_point in balance_points
     ]
-    return candidate_models
 
 
 def get_single_cdd_hdd_candidate_model(
@@ -1450,16 +1409,12 @@ def get_single_cdd_hdd_candidate_model(
         A single cdd-hdd candidate model, with any associated warnings.
     """
     model_type = "cdd_hdd"
-    cdd_column = "cdd_%s" % cooling_balance_point
-    hdd_column = "hdd_%s" % heating_balance_point
-    formula = "meter_value ~ %s + %s" % (cdd_column, hdd_column)
+    cdd_column = f"cdd_{cooling_balance_point}"
+    hdd_column = f"hdd_{heating_balance_point}"
+    formula = f"meter_value ~ {cdd_column} + {hdd_column}"
     n_days_column = None
 
-    if weights_col is None:
-        weights = 1
-    else:
-        weights = data[weights_col]
-
+    weights = 1 if weights_col is None else data[weights_col]
     period_days = weights
 
     degree_day_warnings = []
@@ -1502,7 +1457,7 @@ def get_single_cdd_hdd_candidate_model(
         )
     )
 
-    if len(degree_day_warnings) > 0:
+    if degree_day_warnings:
         return CalTRACKUsagePerDayCandidateModel(
             model_type, formula, "NOT ATTEMPTED", warnings=degree_day_warnings
         )
@@ -1552,11 +1507,7 @@ def get_single_cdd_hdd_candidate_model(
         )
     )
 
-    if len(model_warnings) > 0:
-        status = "DISQUALIFIED"
-    else:
-        status = "QUALIFIED"
-
+    status = "DISQUALIFIED" if model_warnings else "QUALIFIED"
     return CalTRACKUsagePerDayCandidateModel(
         model_type=model_type,
         formula=formula,
@@ -1619,8 +1570,7 @@ def get_cdd_hdd_candidate_models(
         int(col[4:]) for col in data.columns if col.startswith("hdd")
     ]
 
-    # CalTrack 3.2.2.1
-    candidate_models = [
+    return [
         get_single_cdd_hdd_candidate_model(
             data,
             minimum_non_zero_cdd,
@@ -1637,7 +1587,6 @@ def get_cdd_hdd_candidate_models(
         for heating_balance_point in heating_balance_points
         if heating_balance_point <= cooling_balance_point
     ]
-    return candidate_models
 
 
 def select_best_candidate(candidate_models):
@@ -1674,13 +1623,14 @@ def select_best_candidate(candidate_models):
                 qualified_name="eemeter.caltrack_daily.select_best_candidate.no_candidates",
                 description="No qualified model candidates available.",
                 data={
-                    "status_count:{}".format(status): count
+                    f"status_count:{status}": count
                     for status, count in Counter(
                         [c.status for c in candidate_models]
                     ).items()
                 },
             )
         ]
+
         return None, warnings
 
     return best_candidate, []
@@ -2138,11 +2088,7 @@ def caltrack_sufficiency_criteria(
             )
         )
 
-    if len(critical_warnings) > 0:
-        status = "FAIL"
-    else:
-        status = "PASS"
-
+    status = "FAIL" if critical_warnings else "PASS"
     non_critical_warnings = []
     if n_extreme_values > 0:
         # CalTRACK 2.3.6
@@ -2265,10 +2211,10 @@ def plot_caltrack_candidate(
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
-    if candidate.status == "QUALIFIED":
-        color = "C2"
-    elif candidate.status == "DISQUALIFIED":
+    if candidate.status == "DISQUALIFIED":
         color = "C3"
+    elif candidate.status == "QUALIFIED":
+        color = "C2"
     else:
         return
 
@@ -2292,9 +2238,7 @@ def plot_caltrack_candidate(
         prediction_index, temps_hourly, "daily"
     ).result.predicted_usage
 
-    plot_kwargs = {"color": color, "alpha": alpha or 0.3}
-    plot_kwargs.update(kwargs)
-
+    plot_kwargs = {"color": color, "alpha": alpha or 0.3} | kwargs
     ax.plot(temps, prediction, **plot_kwargs)
 
     if title is not None:

@@ -915,8 +915,7 @@ def test_compute_usage_per_day_feature_billing(meter_data_billing):
 def complete_hour_of_week_feature():
     index = pd.date_range("2017-01-01", periods=168, freq="H", tz="UTC")
     time_features = compute_time_features(index, hour_of_week=True)
-    hour_of_week_feature = time_features.hour_of_week
-    return hour_of_week_feature
+    return time_features.hour_of_week
 
 
 def test_get_missing_hours_of_week_warning_ok(complete_hour_of_week_feature):
@@ -928,8 +927,7 @@ def test_get_missing_hours_of_week_warning_ok(complete_hour_of_week_feature):
 def partial_hour_of_week_feature():
     index = pd.date_range("2017-01-01", periods=84, freq="H", tz="UTC")
     time_features = compute_time_features(index, hour_of_week=True)
-    hour_of_week_feature = time_features.hour_of_week
-    return hour_of_week_feature
+    return time_features.hour_of_week
 
 
 def test_get_missing_hours_of_week_warning_triggered(partial_hour_of_week_feature):
@@ -1042,8 +1040,7 @@ def test_fit_temperature_bins_no_segmentation(temperature_means):
 
 @pytest.fixture
 def occupancy_lookup_no_segmentation(occupancy_precursor):
-    occupancy = estimate_hour_of_week_occupancy(occupancy_precursor)
-    return occupancy
+    return estimate_hour_of_week_occupancy(occupancy_precursor)
 
 
 def test_fit_temperature_bins_no_segmentation_with_occupancy(
@@ -1089,10 +1086,9 @@ def test_fit_temperature_bins_one_month_segmentation(
 def occupancy_lookup_one_month_segmentation(
     occupancy_precursor, one_month_segmentation
 ):
-    occupancy_lookup = estimate_hour_of_week_occupancy(
+    return estimate_hour_of_week_occupancy(
         occupancy_precursor, segmentation=one_month_segmentation
     )
-    return occupancy_lookup
 
 
 def test_fit_temperature_bins_with_occupancy_lookup(

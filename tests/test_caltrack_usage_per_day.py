@@ -317,15 +317,17 @@ def utc_index():
 
 @pytest.fixture
 def temperature_data(utc_index):
-    series = pd.Series(
+    return pd.Series(
         [
-            30.0 * ((i % (365 * 24.0)) / (365 * 24.0))  # 30 * frac of way through year
+            30.0
+            * (
+                (i % (365 * 24.0)) / (365 * 24.0)
+            )  # 30 * frac of way through year
             + 50.0  # range from 50 to 80
             for i in range(len(utc_index))
         ],
         index=utc_index,
     )
-    return series
 
 
 @pytest.fixture
@@ -669,8 +671,7 @@ def cdd_hdd_h54_c67_billing_monthly_totals(il_electricity_cdd_hdd_billing_monthl
         cooling_balance_points=[67],
         use_mean_daily_values=False,
     )
-    data = merge_features([meter_data, temperature_features])
-    return data
+    return merge_features([meter_data, temperature_features])
 
 
 def test_caltrack_predict_design_matrix_input_avg_false_output_avg_true(
@@ -725,8 +726,7 @@ def cdd_hdd_h54_c67_billing_monthly_avgs(il_electricity_cdd_hdd_billing_monthly)
         use_mean_daily_values=True,
     )
     meter_data_feature = compute_usage_per_day_feature(meter_data)
-    data = merge_features([meter_data_feature, temperature_features])
-    return data
+    return merge_features([meter_data_feature, temperature_features])
 
 
 def test_caltrack_predict_design_matrix_input_avg_true_output_avg_false(
@@ -1624,8 +1624,7 @@ def baseline_meter_data_billing():
 @pytest.fixture
 def baseline_temperature_data():
     index = pd.date_range("2011-01-01", freq="H", periods=1095 * 24, tz="UTC")
-    series = pd.Series(np.random.normal(60, 5, len(index)), index=index)
-    return series
+    return pd.Series(np.random.normal(60, 5, len(index)), index=index)
 
 
 # CalTrack 2.2.3.2

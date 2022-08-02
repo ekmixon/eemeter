@@ -54,7 +54,7 @@ def test_eemeter_caltrack_meter_data_only():
     runner = CliRunner()
 
     meter_file = resource_filename("eemeter.samples", "il-gas-hdd-only-daily.csv.gz")
-    result = runner.invoke(caltrack, ["--meter-file={}".format(meter_file)])
+    result = runner.invoke(caltrack, [f"--meter-file={meter_file}"])
 
     assert result.exit_code == 1
     assert result.output == "Error: Temperature data not specified.\n"
@@ -65,7 +65,7 @@ def test_eemeter_caltrack_temperature_data_only():
 
     temperature_file = resource_filename("eemeter.samples", "il-tempF.csv.gz")
 
-    result = runner.invoke(caltrack, ["--temperature-file={}".format(temperature_file)])
+    result = runner.invoke(caltrack, [f"--temperature-file={temperature_file}"])
 
     assert result.exit_code == 1
     assert result.output == "Error: Meter data not specified.\n"
@@ -80,10 +80,11 @@ def test_eemeter_caltrack_temperature_custom_data():
     result = runner.invoke(
         caltrack,
         [
-            "--meter-file={}".format(meter_file),
-            "--temperature-file={}".format(temperature_file),
+            f"--meter-file={meter_file}",
+            f"--temperature-file={temperature_file}",
         ],
     )
+
 
     assert result.exit_code == 0
     assert result.output.endswith("}\n")  # json
@@ -95,8 +96,12 @@ def test_eemeter_caltrack_sample_output_file():
     output_file = NamedTemporaryFile()
     result = runner.invoke(
         caltrack,
-        ["--sample=il-gas-hdd-only-daily", "--output-file={}".format(output_file.name)],
+        [
+            "--sample=il-gas-hdd-only-daily",
+            f"--output-file={output_file.name}",
+        ],
     )
+
 
     assert result.exit_code == 0
     assert "Output written:" in result.output

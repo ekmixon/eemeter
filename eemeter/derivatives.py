@@ -73,14 +73,17 @@ def _compute_fsu_error(
         c_coeff = 1.00286
         months_reporting = float(post_obs) / 30.0
 
-    fsu_error_band = total_base_energy * (
+    return total_base_energy * (
         t_stat
-        * (a_coeff * months_reporting ** 2.0 + b_coeff * months_reporting + c_coeff)
+        * (
+            a_coeff * months_reporting**2.0
+            + b_coeff * months_reporting
+            + c_coeff
+        )
         * (rmse_base_residuals / base_avg)
-        * ((base_obs / nprime) * (1.0 + (2.0 / nprime)) * (1.0 / post_obs)) ** 0.5
+        * ((base_obs / nprime) * (1.0 + (2.0 / nprime)) * (1.0 / post_obs))
+        ** 0.5
     )
-
-    return fsu_error_band
 
 
 def _compute_error_bands_metered_savings(

@@ -40,7 +40,7 @@ from eemeter.features import (
 def segmented_data():
     index = pd.date_range(start="2017-01-01", periods=24, freq="H", tz="UTC")
     time_features = compute_time_features(index)
-    segmented_data = pd.DataFrame(
+    return pd.DataFrame(
         {
             "hour_of_week": time_features.hour_of_week,
             "temperature_mean": np.linspace(0, 100, 24),
@@ -49,7 +49,6 @@ def segmented_data():
         },
         index=index,
     )
-    return segmented_data
 
 
 @pytest.fixture
@@ -168,8 +167,7 @@ def test_fit_caltrack_hourly_model_segment(segmented_design_matrices):
 @pytest.fixture
 def temps():
     index = pd.date_range(start="2017-01-01", periods=24, freq="H", tz="UTC")
-    temps = pd.Series(np.linspace(0, 100, 24), index=index)
-    return temps
+    return pd.Series(np.linspace(0, 100, 24), index=index)
 
 
 def test_fit_caltrack_hourly_model(
@@ -212,7 +210,7 @@ def segmented_data_nans():
     num_periods = 200
     index = pd.date_range(start="2017-01-01", periods=num_periods, freq="H", tz="UTC")
     time_features = compute_time_features(index)
-    segmented_data = pd.DataFrame(
+    return pd.DataFrame(
         {
             "hour_of_week": time_features.hour_of_week,
             "temperature_mean": np.linspace(0, 100, num_periods),
@@ -221,14 +219,13 @@ def segmented_data_nans():
         },
         index=index,
     )
-    return segmented_data
 
 
 @pytest.fixture
 def occupancy_lookup_nans():
     index = pd.Categorical(range(168))
     occupancy = pd.Series([i % 2 == 0 for i in range(168)], index=index)
-    occupancy_nans = pd.Series([np.nan for i in range(168)], index=index)
+    occupancy_nans = pd.Series([np.nan for _ in range(168)], index=index)
     return pd.DataFrame(
         {
             "dec-jan-feb-weighted": occupancy,
@@ -301,7 +298,7 @@ def segmented_data_nans_less_than_week():
     num_periods = 4
     index = pd.date_range(start="2017-01-01", periods=num_periods, freq="H", tz="UTC")
     time_features = compute_time_features(index)
-    segmented_data = pd.DataFrame(
+    return pd.DataFrame(
         {
             "hour_of_week": time_features.hour_of_week,
             "temperature_mean": np.linspace(0, 100, num_periods),
@@ -310,14 +307,16 @@ def segmented_data_nans_less_than_week():
         },
         index=index,
     )
-    return segmented_data
 
 
 @pytest.fixture
 def occupancy_lookup_nans_less_than_week():
     index = pd.Categorical(range(168))
     occupancy = pd.Series([i % 2 == 0 for i in range(168)], index=index)
-    occupancy_nans_less_than_week = pd.Series([np.nan for i in range(168)], index=index)
+    occupancy_nans_less_than_week = pd.Series(
+        [np.nan for _ in range(168)], index=index
+    )
+
     return pd.DataFrame(
         {
             "dec-jan-feb-weighted": occupancy,
@@ -367,8 +366,7 @@ def segmented_design_matrices_nans_less_than_week(
 @pytest.fixture
 def temps_extended():
     index = pd.date_range(start="2017-01-01", periods=168, freq="H", tz="UTC")
-    temps = pd.Series(1, index=index)
-    return temps
+    return pd.Series(1, index=index)
 
 
 def test_fit_caltrack_hourly_model_nans_less_than_week_fit(

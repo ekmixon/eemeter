@@ -298,14 +298,14 @@ def test_compute_autocorr_resid(sample_data_merged):
 def test_json_safe_float():
     assert _json_safe_float(float("inf")) is None
     assert _json_safe_float(float("-inf")) is None
-    assert _json_safe_float(float("nan")) == None
+    assert _json_safe_float(float("nan")) is None
     assert _json_safe_float(np.inf) is None
     assert _json_safe_float(-np.inf) is None
     assert _json_safe_float(np.nan) is None
     assert _json_safe_float(3.3) == 3.3
     assert _json_safe_float("3.3") == 3.3
     assert _json_safe_float(1) == 1.0
-    assert _json_safe_float(None) == None
+    assert _json_safe_float(None) is None
 
     with pytest.raises(Exception):
         _json_safe_float("not a number")

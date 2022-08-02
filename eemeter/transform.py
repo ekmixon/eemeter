@@ -120,8 +120,9 @@ def as_freq(
     # TODO(philngo): make sure this complies with CalTRACK 2.2.2.1
     if not isinstance(data_series, pd.Series):
         raise ValueError(
-            "expected series, got object with class {}".format(data_series.__class__)
+            f"expected series, got object with class {data_series.__class__}"
         )
+
     if data_series.empty:
         return data_series
     series = remove_duplicates(data_series)
@@ -155,9 +156,7 @@ def as_freq(
         n_total = resampled.resample(atomic_freq).count().resample(freq).count()
         resampled = resampled.to_frame("value")
         resampled["coverage"] = n_coverage / n_total
-        return resampled
-    else:
-        return resampled
+    return resampled
 
 
 def day_counts(index):
@@ -282,13 +281,11 @@ def get_baseline_data(
     baseline_data, warnings : :any:`tuple` of (:any:`pandas.DataFrame` or :any:`pandas.Series`, :any:`list` of :any:`eemeter.EEMeterWarning`)
         Data for only the specified baseline period and any associated warnings.
     """
-    if max_days is not None:
-        if start is not None:
-            raise ValueError(  # pragma: no cover
-                "If max_days is set, start cannot be set: start={}, max_days={}.".format(
-                    start, max_days
-                )
-            )
+    if max_days is not None and start is not None:
+        raise ValueError(
+            f"If max_days is set, start cannot be set: start={start}, max_days={max_days}."
+        )
+
 
     start_inf = False
     if start is None:
@@ -438,13 +435,11 @@ def get_reporting_data(
     :any:`pandas.Series`, :any:`list` of :any:`eemeter.EEMeterWarning`)
         Data for only the specified reporting period and any associated warnings.
     """
-    if max_days is not None:
-        if end is not None:
-            raise ValueError(  # pragma: no cover
-                "If max_days is set, end cannot be set: end={}, max_days={}.".format(
-                    end, max_days
-                )
-            )
+    if max_days is not None and end is not None:
+        raise ValueError(
+            f"If max_days is set, end cannot be set: end={end}, max_days={max_days}."
+        )
+
 
     start_inf = False
     if start is None:
@@ -555,15 +550,7 @@ class Term(object):
         self.complete = complete
 
     def __repr__(self):
-        return (
-            "Term(label={}, target_term_length_days={}, actual_term_length_days={},"
-            " complete={})"
-        ).format(
-            self.label,
-            self.target_term_length_days,
-            self.actual_term_length_days,
-            self.complete,
-        )
+        return f"Term(label={self.label}, target_term_length_days={self.target_term_length_days}, actual_term_length_days={self.actual_term_length_days}, complete={self.complete})"
 
 
 def get_terms(index, term_lengths, term_labels=None, start=None, method="strict"):
@@ -603,8 +590,9 @@ def get_terms(index, term_lengths, term_labels=None, start=None, method="strict"
         get_loc_method = "nearest"
     else:
         raise ValueError(
-            "method {} not supported - use either 'strict' or 'closest'".format(method)
+            f"method {method} not supported - use either 'strict' or 'closest'"
         )
+
 
     if not index.is_monotonic_increasing:
         raise ValueError("get_terms requires a sorted index")
@@ -616,16 +604,11 @@ def get_terms(index, term_lengths, term_labels=None, start=None, method="strict"
 
     elif len(term_labels) != len(term_lengths):
         raise ValueError(
-            "term_labels (len {}) must be the same length as term_length (len {})".format(
-                len(term_labels), len(term_lengths)
-            )
+            f"term_labels (len {len(term_labels)}) must be the same length as term_length (len {len(term_lengths)})"
         )
 
-    if start is None:
-        prev_start = index.min()
-    else:
-        prev_start = start
 
+    prev_start = index.min() if start is None else start
     term_end_targets = [
         prev_start + timedelta(days=sum(term_lengths[: i + 1]))
         for i in range(len(term_lengths))
@@ -724,8 +707,6 @@ def clean_caltrack_billing_data(data, source_interval):
         7       7
         8       NaN
         """
-        add_estimated = []
-        remove_estimated_fixed_rows = []
         orig_data = data.copy()
         if "estimated" in data.columns:
             data["unestimated_value"] = (
@@ -734,6 +715,8 @@ def clean_caltrack_billing_data(data, source_interval):
             data["estimated_value"] = (
                 data[:-1].value[(data[:-1].estimated)].reindex(data.index)
             )
+            add_estimated = []
+            remove_estimated_fixed_rows = []
             for i, (index, row) in enumerate(data[:-1].iterrows()):
                 # ensures there is a prev_row and previous row value is null
                 if i > 0 and pd.isnull(prev_row["unestimated_value"]):
@@ -754,10 +737,7 @@ def clean_caltrack_billing_data(data, source_interval):
             data = data[["value"]]  # remove the estimated column
 
     # check again for empty data
-    if data.dropna().empty:
-        return data[:0]
-
-    return data
+    return data[:0] if data.dropna().empty else data
 
 
 def downsample_and_clean_caltrack_daily_data(data):

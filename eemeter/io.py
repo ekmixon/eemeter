@@ -75,10 +75,10 @@ def meter_data_from_csv(
     }
 
     if gzipped:
-        read_csv_kwargs.update({"compression": "gzip"})
+        read_csv_kwargs["compression"] = "gzip"
 
     # allow passing extra kwargs
-    read_csv_kwargs.update(kwargs)
+    read_csv_kwargs |= kwargs
 
     df = pd.read_csv(filepath_or_buffer, **read_csv_kwargs)
     df.index = pd.to_datetime(df.index, utc=True)
@@ -142,10 +142,10 @@ def temperature_data_from_csv(
     }
 
     if gzipped:
-        read_csv_kwargs.update({"compression": "gzip"})
+        read_csv_kwargs["compression"] = "gzip"
 
     # allow passing extra kwargs
-    read_csv_kwargs.update(kwargs)
+    read_csv_kwargs |= kwargs
 
     df = pd.read_csv(filepath_or_buffer, **read_csv_kwargs)
     df.index = pd.to_datetime(df.index, utc=True)
@@ -264,13 +264,12 @@ def temperature_data_from_json(data, orient="list"):
         DataFrame with a single column (``'tempF'``) and a
         :any:`pandas.DatetimeIndex`.
     """
-    if orient == "list":
-        df = pd.DataFrame(data, columns=["dt", "tempF"])
-        series = df.tempF
-        series.index = pd.to_datetime(df.dt, utc=True)
-        return series
-    else:
+    if orient != "list":
         raise ValueError("orientation not recognized.")
+    df = pd.DataFrame(data, columns=["dt", "tempF"])
+    series = df.tempF
+    series.index = pd.to_datetime(df.dt, utc=True)
+    return series
 
 
 def meter_data_to_csv(meter_data, path_or_buf):

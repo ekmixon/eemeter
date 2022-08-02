@@ -44,16 +44,14 @@ def baseline_data_daily(il_electricity_cdd_hdd_daily):
     baseline_meter_data, warnings = get_baseline_data(
         meter_data, end=blackout_start_date
     )
-    baseline_data = create_caltrack_daily_design_matrix(
+    return create_caltrack_daily_design_matrix(
         baseline_meter_data, temperature_data
     )
-    return baseline_data
 
 
 @pytest.fixture
 def baseline_model_daily(baseline_data_daily):
-    model_results = fit_caltrack_usage_per_day_model(baseline_data_daily)
-    return model_results
+    return fit_caltrack_usage_per_day_model(baseline_data_daily)
 
 
 @pytest.fixture
@@ -64,16 +62,14 @@ def reporting_data_daily(il_electricity_cdd_hdd_daily):
     reporting_meter_data, warnings = get_reporting_data(
         meter_data, start=blackout_end_date
     )
-    reporting_data = create_caltrack_daily_design_matrix(
+    return create_caltrack_daily_design_matrix(
         reporting_meter_data, temperature_data
     )
-    return reporting_data
 
 
 @pytest.fixture
 def reporting_model_daily(reporting_data_daily):
-    model_results = fit_caltrack_usage_per_day_model(reporting_data_daily)
-    return model_results
+    return fit_caltrack_usage_per_day_model(reporting_data_daily)
 
 
 @pytest.fixture
@@ -120,10 +116,9 @@ def baseline_model_billing(il_electricity_cdd_hdd_billing_monthly):
     baseline_data = create_caltrack_billing_design_matrix(
         baseline_meter_data, temperature_data
     )
-    model_results = fit_caltrack_usage_per_day_model(
+    return fit_caltrack_usage_per_day_model(
         baseline_data, use_billing_presets=True, weights_col="n_days_kept"
     )
-    return model_results
 
 
 @pytest.fixture
@@ -138,10 +133,9 @@ def reporting_model_billing(il_electricity_cdd_hdd_billing_monthly):
     baseline_data = create_caltrack_billing_design_matrix(
         baseline_meter_data, temperature_data
     )
-    model_results = fit_caltrack_usage_per_day_model(
+    return fit_caltrack_usage_per_day_model(
         baseline_data, use_billing_presets=True, weights_col="n_days_kept"
     )
-    return model_results
 
 
 @pytest.fixture
@@ -221,10 +215,9 @@ def baseline_model_billing_single_record_baseline_data(
         baseline_meter_data, temperature_data
     )
     baseline_data = baseline_data[:2]
-    model_results = fit_caltrack_usage_per_day_model(
+    return fit_caltrack_usage_per_day_model(
         baseline_data, use_billing_presets=True, weights_col="n_days_kept"
     )
-    return model_results
 
 
 def test_metered_savings_cdd_hdd_billing_single_record_baseline_data(
@@ -491,13 +484,12 @@ def baseline_model_hourly(il_electricity_cdd_hdd_hourly):
         occupied_temperature_bins,
         unoccupied_temperature_bins,
     )
-    segmented_model = fit_caltrack_hourly_model(
+    return fit_caltrack_hourly_model(
         design_matrices,
         occupancy_lookup,
         occupied_temperature_bins,
         unoccupied_temperature_bins,
     )
-    return segmented_model
 
 
 @pytest.fixture
@@ -529,13 +521,12 @@ def reporting_model_hourly(il_electricity_cdd_hdd_hourly):
         occupied_temperature_bins,
         unoccupied_temperature_bins,
     )
-    segmented_model = fit_caltrack_hourly_model(
+    return fit_caltrack_hourly_model(
         design_matrices,
         occupancy_lookup,
         occupied_temperature_bins,
         unoccupied_temperature_bins,
     )
-    return segmented_model
 
 
 @pytest.fixture
@@ -647,10 +638,9 @@ def baseline_model_billing_single_record(il_electricity_cdd_hdd_billing_monthly)
     baseline_data = create_caltrack_billing_design_matrix(
         baseline_meter_data, temperature_data
     )
-    model_results = fit_caltrack_usage_per_day_model(
+    return fit_caltrack_usage_per_day_model(
         baseline_data, use_billing_presets=True, weights_col="n_days_kept"
     )
-    return model_results
 
 
 def test_metered_savings_model_single_record(

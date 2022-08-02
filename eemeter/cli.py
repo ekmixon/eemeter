@@ -69,36 +69,34 @@ def _get_data(
     if sample is not None:
         with resource_stream("eemeter.samples", "metadata.json") as f:
             metadata = json.loads(f.read().decode("utf-8"))
-        if sample in metadata:
-            click.echo("Loading sample: {}".format(sample))
-
-            meter_file = resource_stream(
-                "eemeter.samples", metadata[sample]["meter_data_filename"]
-            )
-            temperature_file = resource_stream(
-                "eemeter.samples", metadata[sample]["temperature_filename"]
-            )
-        else:
+        if sample not in metadata:
             raise click.ClickException(
                 "Sample not found. Try one of these?\n{}".format(
-                    "\n".join([" - {}".format(key) for key in sorted(metadata.keys())])
+                    "\n".join([f" - {key}" for key in sorted(metadata.keys())])
                 )
             )
 
-    if meter_file is not None:
-        gzipped = meter_file.name.endswith(".gz")
-        meter_data = meter_data_from_csv(meter_file, gzipped=gzipped)
-    else:
+
+        click.echo(f"Loading sample: {sample}")
+
+        meter_file = resource_stream(
+            "eemeter.samples", metadata[sample]["meter_data_filename"]
+        )
+        temperature_file = resource_stream(
+            "eemeter.samples", metadata[sample]["temperature_filename"]
+        )
+    if meter_file is None:
         raise click.ClickException("Meter data not specified.")
 
-    if temperature_file is not None:
-        gzipped = temperature_file.name.endswith(".gz")
-        temperature_data = temperature_data_from_csv(
-            temperature_file, gzipped=gzipped, freq="hourly"
-        )
-    else:
+    gzipped = meter_file.name.endswith(".gz")
+    meter_data = meter_data_from_csv(meter_file, gzipped=gzipped)
+    if temperature_file is None:
         raise click.ClickException("Temperature data not specified.")
 
+    gzipped = temperature_file.name.endswith(".gz")
+    temperature_data = temperature_data_from_csv(
+        temperature_file, gzipped=gzipped, freq="hourly"
+    )
     usage_per_day = compute_usage_per_day_feature(meter_data)
     temperature_features = compute_temperature_features(
         meter_data.index,
@@ -139,4 +137,4 @@ def caltrack(
         click.echo(json_str)
     else:
         output_file.write(json_str.encode("utf-8"))
-        click.echo("Output written: {}".format(output_file.name))
+        click.echo(f"Output written: {output_file.name}")

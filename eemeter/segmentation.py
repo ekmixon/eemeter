@@ -65,11 +65,7 @@ class CalTRACKSegmentModel(object):
 
     def predict(self, data):
         """A function which takes input data and predicts for this segment model."""
-        if self.formula is None:
-            var_str = ""
-        else:
-            var_str = self.formula.split("~", 1)[1]
-
+        var_str = "" if self.formula is None else self.formula.split("~", 1)[1]
         design_matrix_granular = dmatrix(var_str, data, return_type="dataframe")
         parameters = pd.Series(self.model_params)
 
@@ -107,13 +103,12 @@ class CalTRACKSegmentModel(object):
         with :any:`json.dumps`.
         """
 
-        data = {
+        return {
             "segment_name": self.segment_name,
             "formula": self.formula,
             "warnings": [w.json() for w in self.warnings],
             "model_params": self.model_params,
         }
-        return data
 
     @classmethod
     def from_json(cls, data):
@@ -123,15 +118,13 @@ class CalTRACKSegmentModel(object):
         of :any:`json.loads`.
         """
 
-        c = cls(
+        return cls(
             data.get("segment_name"),
             None,
             data.get("formula"),
             data.get("model_params"),
             warnings=data.get("warnings"),
         )
-
-        return c
 
 
 class SegmentedModel(object):
@@ -478,10 +471,11 @@ def segment_time_series(index, segment_type="single", drop_zero_weight_segments=
         "one_month": _segment_weights_one_month,
         "three_month": _segment_weights_three_month,
         "three_month_weighted": _segment_weights_three_month_weighted,
-    }.get(segment_type, None)
+    }.get(segment_type)
+
 
     if segment_weight_func is None:
-        raise ValueError("Invalid segment type: %s" % (segment_type))
+        raise ValueError(f"Invalid segment type: {segment_type}")
 
     segment_weights = segment_weight_func(index)
 
@@ -513,8 +507,7 @@ def fit_model_segments(segmented_dataset_dict, fit_segment):
     segment_models : :any:`list` of :any:`object`
         List of fitted model objects - the return values of the fit_segment function.
     """
-    segment_models = [
+    return [
         fit_segment(segment_name, segment_data)
         for segment_name, segment_data in segmented_dataset_dict.items()
     ]
-    return segment_models

@@ -105,9 +105,7 @@ class CalTRACKHourlyModelResults(object):
         self.avgs_metrics = None
 
     def __repr__(self):
-        return "CalTRACKHourlyModelResults(status='{}', method_name='{}')".format(
-            self.status, self.method_name
-        )
+        return f"CalTRACKHourlyModelResults(status='{self.status}', method_name='{self.method_name}')"
 
     def json(self, with_candidates=False):
         """Return a JSON-serializable representation of this result.
@@ -146,12 +144,7 @@ class CalTRACKHourlyModelResults(object):
         of :any:`json.loads`.
         """
 
-        # "model" is a CalTRACKHourlyModel that was serialized
-        model = None
-        d = data.get("model")
-        if d:
-            model = CalTRACKHourlyModel.from_json(d)
-
+        model = CalTRACKHourlyModel.from_json(d) if (d := data.get("model")) else None
         c = cls(
             data.get("status"),
             data.get("method_name"),
@@ -161,13 +154,9 @@ class CalTRACKHourlyModelResults(object):
             settings=data.get("settings"),
         )
 
-        # Note the metrics do not contain all the data needed
-        # for reconstruction (like the input pandas) ...
-        d = data.get("avgs_metrics")
-        if d:
+        if d := data.get("avgs_metrics"):
             c.avgs_metrics = ModelMetrics.from_json(d)  # pragma: no cover
-        d = data.get("totals_metrics")
-        if d:
+        if d := data.get("totals_metrics"):
             c.totals_metrics = ModelMetrics.from_json(d)
         return c
 
@@ -279,14 +268,12 @@ class CalTRACKHourlyModel(SegmentedModel):
         occupancy_lookup = pd.read_json(data.get("occupancy_lookup"), orient="split")
         occupancy_lookup.index = occupancy_lookup.index.astype("category")
 
-        c = cls(
+        return cls(
             segment_models,
             occupancy_lookup,
             pd.read_json(data.get("occupied_temperature_bins"), orient="split"),
             pd.read_json(data.get("unoccupied_temperature_bins"), orient="split"),
         )
-
-        return c
 
 
 def caltrack_hourly_fit_feature_processor(
@@ -348,22 +335,24 @@ def caltrack_hourly_fit_feature_processor(
     occupied_temperature_bin_features[occupancy_feature == 0] = 0
     occupied_temperature_bin_features.rename(
         columns={
-            c: "{}_occupied".format(c)
+            c: f"{c}_occupied"
             for c in occupied_temperature_bin_features.columns
         },
         inplace=True,
     )
+
     unoccupied_temperature_bin_features = compute_temperature_bin_features(
         segmented_data.temperature_mean, unoccupied_bin_endpoints_list
     )
     unoccupied_temperature_bin_features[occupancy_feature == 1] = 0
     unoccupied_temperature_bin_features.rename(
         columns={
-            c: "{}_unoccupied".format(c)
+            c: f"{c}_unoccupied"
             for c in unoccupied_temperature_bin_features.columns
         },
         inplace=True,
     )
+
 
     # combine features
     return merge_features(
@@ -440,22 +429,24 @@ def caltrack_hourly_prediction_feature_processor(
     occupied_temperature_bin_features[occupancy_feature == 0] = 0
     occupied_temperature_bin_features.rename(
         columns={
-            c: "{}_occupied".format(c)
+            c: f"{c}_occupied"
             for c in occupied_temperature_bin_features.columns
         },
         inplace=True,
     )
+
     unoccupied_temperature_bin_features = compute_temperature_bin_features(
         segmented_data.temperature_mean, unoccupied_bin_endpoints_list
     )
     unoccupied_temperature_bin_features[occupancy_feature == 1] = 0
     unoccupied_temperature_bin_features.rename(
         columns={
-            c: "{}_unoccupied".format(c)
+            c: f"{c}_unoccupied"
             for c in unoccupied_temperature_bin_features.columns
         },
         inplace=True,
     )
+
 
     # combine features
     return merge_features(
@@ -512,7 +503,7 @@ def fit_caltrack_hourly_model_segment(segment_name, segment_data):
 
         formula = _get_hourly_model_formula(segment_data)
         model = smf.wls(formula=formula, data=segment_data, weights=segment_data.weight)
-        model_params = {coeff: value for coeff, value in model.fit().params.items()}
+        model_params = dict(model.fit().params.items())
 
     segment_model = CalTRACKSegmentModel(
         segment_name=segment_name,

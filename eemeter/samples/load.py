@@ -68,10 +68,11 @@ def load_sample(sample):
             "Sample not found: {}. Try one of these?\n{}".format(
                 sample,
                 "\n".join(
-                    [" - {}".format(key) for key in sorted(sample_metadata.keys())]
+                    [f" - {key}" for key in sorted(sample_metadata.keys())]
                 ),
             )
         )
+
 
     freq = metadata.get("freq")
     if freq not in ("hourly", "daily"):

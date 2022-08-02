@@ -40,7 +40,7 @@ class EEMeterWarning(object):
         self.data = data
 
     def __repr__(self):
-        return "EEMeterWarning(qualified_name={})".format(self.qualified_name)
+        return f"EEMeterWarning(qualified_name={self.qualified_name})"
 
     def json(self):
         """Return a JSON-serializable representation of this result.

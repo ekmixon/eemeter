@@ -54,8 +54,7 @@ def plot_time_series(meter_data, temperature_data, **kwargs):
     except ImportError:  # pragma: no cover
         raise ImportError("matplotlib is required for plotting.")
 
-    default_kwargs = {"figsize": (16, 4)}
-    default_kwargs.update(kwargs)
+    default_kwargs = {"figsize": (16, 4)} | kwargs
     fig, ax1 = plt.subplots(**default_kwargs)
 
     ax1.plot(

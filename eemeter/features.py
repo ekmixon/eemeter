@@ -142,17 +142,15 @@ def compute_time_features(index, hour_of_week=True, day_of_week=True, hour_of_da
     """
     if index.freq != "H":
         raise ValueError(
-            "index must have hourly frequency (freq='H')."
-            " Found: {}".format(index.freq)
+            f"index must have hourly frequency (freq='H'). Found: {index.freq}"
         )
+
 
     dow_feature = pd.Series(index.dayofweek, index=index, name="day_of_week")
     hod_feature = pd.Series(index.hour, index=index, name="hour_of_day")
     how_feature = (dow_feature * 24 + hod_feature).rename("hour_of_week")
 
     features = []
-    warnings = []
-
     if day_of_week:
         features.append(dow_feature.astype("category"))
     if hour_of_day:
@@ -162,28 +160,25 @@ def compute_time_features(index, hour_of_week=True, day_of_week=True, hour_of_da
         features.append(how_feature)
         warning = get_missing_hours_of_week_warning(how_feature)
         if warning is not None:
-            warnings.append(warning)
+            warnings = [warning]
 
-    if len(features) == 0:
+    if not features:
         raise ValueError("No features selected.")
 
-    time_features = merge_features(features)
-    return time_features
+    return merge_features(features)
 
 
 def _matching_groups(index, df, tolerance):
     # convert index to df for use with merge_asof
     index_df = pd.DataFrame({"index_col": index}, index=index)
 
-    # get a dataframe containing mean temperature
-    #   1) merge by matching temperature to closest previous meter start date,
-    #      up to tolerance limit, using merge_asof.
-    #   2) group by meter_index, and take the mean, ignoring all columns except
-    #      the temperature column.
-    groups = pd.merge_asof(
-        left=df, right=index_df, left_index=True, right_index=True, tolerance=tolerance
+    return pd.merge_asof(
+        left=df,
+        right=index_df,
+        left_index=True,
+        right_index=True,
+        tolerance=tolerance,
     ).groupby("index_col")
-    return groups
 
 
 def _degree_day_columns(
@@ -207,18 +202,17 @@ def _degree_day_columns(
                 "n_hours_kept": n_temps_kept,
                 "n_hours_dropped": n_temps - n_temps_kept,
             }
-            if use_mean_daily_values:
-                n_days = 1
-            else:
-                n_days = n_temps / 24.0
+            n_days = 1 if use_mean_daily_values else n_temps / 24.0
             cdd_cols = {
-                "cdd_%s" % bp: np.maximum(temps - bp, 0).mean() * n_days
+                f"cdd_{bp}": np.maximum(temps - bp, 0).mean() * n_days
                 for bp in cooling_balance_points
             }
+
             hdd_cols = {
-                "hdd_%s" % bp: np.maximum(bp - temps, 0).mean() * n_days
+                f"hdd_{bp}": np.maximum(bp - temps, 0).mean() * n_days
                 for bp in heating_balance_points
             }
+
 
             columns = count_cols
             columns.update(cdd_cols)
@@ -241,7 +235,7 @@ def _degree_day_columns(
 
                 # CalTrack 2.2.3.2
                 if temps.notnull().sum() < n_limit_period:
-                    daily_temps = daily_temps["mean"].iloc[0:0]
+                    daily_temps = daily_temps["mean"].iloc[:0]
                 else:
                     # CalTRACK 2.2.2.3
                     daily_temps = daily_temps["mean"][
@@ -253,19 +247,19 @@ def _degree_day_columns(
                     "n_days_dropped": n_days_total - n_days_kept,
                 }
 
-                if use_mean_daily_values:
-                    n_days = 1
-                else:
-                    n_days = n_days_total
-
+                n_days = 1 if use_mean_daily_values else n_days_total
                 cdd_cols = {
-                    "cdd_%s" % bp: np.maximum(daily_temps - bp, 0).mean() * n_days
+                    f"cdd_{bp}": np.maximum(daily_temps - bp, 0).mean()
+                    * n_days
                     for bp in cooling_balance_points
                 }
+
                 hdd_cols = {
-                    "hdd_%s" % bp: np.maximum(bp - daily_temps, 0).mean() * n_days
+                    f"hdd_{bp}": np.maximum(bp - daily_temps, 0).mean()
+                    * n_days
                     for bp in heating_balance_points
                 }
+
             else:  # faster route for daily case, should have same effect.
 
                 if count > n_limit_daily:
@@ -278,15 +272,17 @@ def _degree_day_columns(
 
                 # CalTrack 3.3.4.1.1
                 cdd_cols = {
-                    "cdd_%s" % bp: np.maximum(mean_temp - bp, 0)
+                    f"cdd_{bp}": np.maximum(mean_temp - bp, 0)
                     for bp in cooling_balance_points
                 }
 
+
                 # CalTrack 3.3.5.1.1
                 hdd_cols = {
-                    "hdd_%s" % bp: np.maximum(bp - mean_temp, 0)
+                    f"hdd_{bp}": np.maximum(bp - mean_temp, 0)
                     for bp in heating_balance_points
                 }
+
 
             columns = count_cols
             columns.update(cdd_cols)
@@ -387,9 +383,9 @@ def compute_temperature_features(
     """
     if temperature_data.index.freq != "H":
         raise ValueError(
-            "temperature_data.index must have hourly frequency (freq='H')."
-            " Found: {}".format(temperature_data.index.freq)
+            f"temperature_data.index must have hourly frequency (freq='H'). Found: {temperature_data.index.freq}"
         )
+
 
     if not temperature_data.index.tz:
         raise ValueError(
@@ -433,7 +429,7 @@ def compute_temperature_features(
     if tolerance is None:
         tolerance = freq_timedelta
 
-    if not (heating_balance_points == [] and cooling_balance_points == []):
+    if heating_balance_points != [] or cooling_balance_points != []:
         if degree_day_method == "hourly":
             pass
         elif degree_day_method == "daily":
@@ -443,29 +439,27 @@ def compute_temperature_features(
                     " hourly meter data. Found: 'daily'".format(degree_day_method)
                 )
         else:
-            raise ValueError("method not supported: {}".format(degree_day_method))
+            raise ValueError(f"method not supported: {degree_day_method}")
 
     if freq_timedelta == pd.Timedelta("1H"):
         # special fast route for hourly data.
         df = temperature_data.to_frame("temperature_mean").reindex(meter_data_index)
 
-        if use_mean_daily_values:
-            n_days = 1
-        else:
-            n_days = 1.0 / 24.0
-
+        n_days = 1 if use_mean_daily_values else 1.0 / 24.0
         df = df.assign(
             **{
-                "cdd_{}".format(bp): np.maximum(df.temperature_mean - bp, 0) * n_days
+                f"cdd_{bp}": np.maximum(df.temperature_mean - bp, 0) * n_days
                 for bp in cooling_balance_points
             }
         )
+
         df = df.assign(
             **{
-                "hdd_{}".format(bp): np.maximum(bp - df.temperature_mean, 0) * n_days
+                f"hdd_{bp}": np.maximum(bp - df.temperature_mean, 0) * n_days
                 for bp in heating_balance_points
             }
         )
+
         df = df.assign(
             n_hours_dropped=df.temperature_mean.isnull().astype(int),
             n_hours_kept=df.temperature_mean.notnull().astype(int),
@@ -491,24 +485,21 @@ def compute_temperature_features(
                 use_mean_daily_values=use_mean_daily_values,
             )
         )
-        temp_agg_column_renames.update(
-            {("temp", "degree_day_columns"): "degree_day_columns"}
-        )
+        temp_agg_column_renames[("temp", "degree_day_columns")] = "degree_day_columns"
 
         if data_quality:
             temp_agg_funcs.extend(
                 [("not_null", "count"), ("null", lambda x: x.isnull().sum())]
             )
-            temp_agg_column_renames.update(
-                {
-                    ("temp", "not_null"): "temperature_not_null",
-                    ("temp", "null"): "temperature_null",
-                }
-            )
+            temp_agg_column_renames |= {
+                ("temp", "not_null"): "temperature_not_null",
+                ("temp", "null"): "temperature_null",
+            }
+
 
         if temperature_mean:
             temp_agg_funcs.extend([("mean", "mean")])
-            temp_agg_column_renames.update({("temp", "mean"): "temperature_mean"})
+            temp_agg_column_renames[("temp", "mean")] = "temperature_mean"
 
         # aggregate temperatures
         temp_df = temperature_data.to_frame("temp")
@@ -658,7 +649,7 @@ def _fit_temperature_bins(temperature_data, default_bins, min_temperature_count)
         if _bin_count_invalid(-1):  # last
             endpoints.add(temp_summary.index[-1].left)
 
-        if len(endpoints) == 0:
+        if not endpoints:
             # try points in middle
             for i in range(1, len(temp_summary) - 1):
                 if _bin_count_invalid(i):
@@ -716,12 +707,15 @@ def fit_temperature_bins(
         categorical index for each candidate bin endpoint and a column for each segment.
     """
     if occupancy_lookup is None:
-        segmented_bins = {}
         segmented_datasets = iterate_segmented_dataset(data, segmentation)
-        for segment_name, segmented_data in segmented_datasets:
-            segmented_bins[segment_name] = _fit_temperature_bins(
-                segmented_data.temperature_mean, default_bins, min_temperature_count
+        segmented_bins = {
+            segment_name: _fit_temperature_bins(
+                segmented_data.temperature_mean,
+                default_bins,
+                min_temperature_count,
             )
+            for segment_name, segmented_data in segmented_datasets
+        }
 
         if segmentation is None:
             bins = segmented_bins[None]

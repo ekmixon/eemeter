@@ -408,16 +408,7 @@ class ModelMetrics(object):
             )
 
     def __repr__(self):
-        return "ModelMetrics(merged_length={}, r_squared_adj={}, cvrmse_adj={}, " "mape_no_zeros={}, nmae={}, nmbe={}, autocorr_resid={}, confidence_level={})".format(
-            self.merged_length,
-            round(self.r_squared_adj, 3),
-            round(self.cvrmse_adj, 3),
-            round(self.mape_no_zeros, 3),
-            round(self.nmae, 3),
-            round(self.nmbe, 3),
-            round(self.autocorr_resid, 3),
-            round(self.confidence_level, 3),
-        )
+        return f"ModelMetrics(merged_length={self.merged_length}, r_squared_adj={round(self.r_squared_adj, 3)}, cvrmse_adj={round(self.cvrmse_adj, 3)}, mape_no_zeros={round(self.mape_no_zeros, 3)}, nmae={round(self.nmae, 3)}, nmbe={round(self.nmbe, 3)}, autocorr_resid={round(self.autocorr_resid, 3)}, confidence_level={round(self.confidence_level, 3)})"
 
     def json(self):
         """Return a JSON-serializable representation of this result.
@@ -476,7 +467,7 @@ class ModelMetrics(object):
         of :any:`json.loads`.
         """
 
-        c = ModelMetricsFromJson(
+        return ModelMetricsFromJson(
             observed_length=data.get("observed_length"),
             predicted_length=data.get("predicted_length"),
             merged_length=data.get("merged_length"),
@@ -505,7 +496,9 @@ class ModelMetrics(object):
             autocorr_resid=data.get("autocorr_resid"),
             confidence_level=data.get("confidence_level"),
             n_prime=data.get("n_prime"),
-            single_tailed_confidence_level=data.get("single_tailed_confidence_level"),
+            single_tailed_confidence_level=data.get(
+                "single_tailed_confidence_level"
+            ),
             degrees_of_freedom=data.get("degrees_of_freedom"),
             t_stat=data.get("t_stat"),
             cvrmse_auto_corr_correction=data.get("cvrmse_auto_corr_correction"),
@@ -514,5 +507,3 @@ class ModelMetrics(object):
             ),
             fsu_base_term=data.get("fsu_base_term"),
         )
-
-        return c

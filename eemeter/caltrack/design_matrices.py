@@ -63,10 +63,13 @@ def create_caltrack_hourly_preliminary_design_matrix(meter_data, temperature_dat
         cooling_balance_points=[65],
         degree_day_method="hourly",
     )
-    design_matrix = merge_features(
-        [meter_data.value.to_frame("meter_value"), temperature_features, time_features]
+    return merge_features(
+        [
+            meter_data.value.to_frame("meter_value"),
+            temperature_features,
+            time_features,
+        ]
     )
-    return design_matrix
 
 
 def create_caltrack_billing_design_matrix(meter_data, temperature_data):
@@ -97,8 +100,7 @@ def create_caltrack_billing_design_matrix(meter_data, temperature_data):
             "35D"
         ),  # limit temperature data matching to periods of up to 35 days.
     )
-    design_matrix = merge_features([usage_per_day, temperature_features])
-    return design_matrix
+    return merge_features([usage_per_day, temperature_features])
 
 
 def create_caltrack_daily_design_matrix(meter_data, temperature_data):
@@ -126,8 +128,7 @@ def create_caltrack_daily_design_matrix(meter_data, temperature_data):
         cooling_balance_points=range(30, 91),
         data_quality=True,
     )
-    design_matrix = merge_features([usage_per_day, temperature_features])
-    return design_matrix
+    return merge_features([usage_per_day, temperature_features])
 
 
 def create_caltrack_hourly_segmented_design_matrices(
@@ -163,9 +164,8 @@ def create_caltrack_hourly_segmented_design_matrices(
         A dict of design matrixes created using the
         :any:`eemeter.caltrack_hourly_fit_feature_processor`.
     """
-    return {
-        segment_name: segmented_data
-        for segment_name, segmented_data in iterate_segmented_dataset(
+    return dict(
+        iterate_segmented_dataset(
             preliminary_design_matrix,
             segmentation=segmentation,
             feature_processor=caltrack_hourly_fit_feature_processor,
@@ -175,4 +175,4 @@ def create_caltrack_hourly_segmented_design_matrices(
                 "unoccupied_temperature_bins": unoccupied_temperature_bins,
             },
         )
-    }
+    )
